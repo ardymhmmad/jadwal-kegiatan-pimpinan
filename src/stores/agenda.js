@@ -53,7 +53,7 @@ export const useAgendaStore = defineStore('agenda', () => {
       })
   })
 
-  // ─── Display agenda: hari ini + mendatang, sort prioritas per hari ───
+  // ─── Display agenda: hari ini + mendatang, maks 8, sort prioritas per hari ───
   const displayAgenda = computed(() => {
     const today = todayStr()
     return agendaList.value
@@ -63,6 +63,7 @@ export const useAgendaStore = defineStore('agenda', () => {
         if (a.prioritas !== b.prioritas) return a.prioritas ? -1 : 1
         return a.waktu.localeCompare(b.waktu)
       })
+      .slice(0, 8)
   })
 
   // ─── Fetch ─────────────────────────────────────────────────
