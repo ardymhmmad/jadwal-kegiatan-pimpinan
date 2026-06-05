@@ -73,9 +73,10 @@ export const useAgendaStore = defineStore('agenda', () => {
     try {
       let query = supabase
         .from('agenda')
-        .select('*')
+        .select('id,tanggal,waktu,kegiatan,tempat,keterangan,prioritas,created_at,updated_at')
         .order('tanggal', { ascending: true })
         .order('waktu',   { ascending: true })
+        .lt('created_at', new Date(Date.now() + 86400000).toISOString()) // bypass cache
 
       if (filters.tanggal) {
         query = query.eq('tanggal', filters.tanggal)
