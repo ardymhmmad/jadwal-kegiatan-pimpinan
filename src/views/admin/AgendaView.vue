@@ -322,6 +322,7 @@ async function handleSubmit() {
       await agendaStore.create(payload)
     }
     closeModal()
+    await new Promise(r => setTimeout(r, 500))
     fetchData()
   } catch (e) {
     formError.value = e.message || 'Terjadi kesalahan. Coba lagi.'
@@ -340,6 +341,7 @@ async function handleDelete() {
   try {
     await agendaStore.remove(deleteTarget.value.id)
     showDeleteModal.value = false
+    await new Promise(r => setTimeout(r, 500))
     fetchData()
   } catch (e) {
     console.error(e)
