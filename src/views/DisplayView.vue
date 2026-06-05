@@ -68,8 +68,8 @@
       ═══════════════════════════════════════ -->
       <main class="display-content">
 
-        <!-- Loading state -->
-        <div v-if="agendaStore.loading" class="state-center">
+        <!-- Loading state - hanya saat pertama kali dan data masih kosong -->
+        <div v-if="agendaStore.loading && agendaStore.agendaList.length === 0" class="state-center">
           <div class="loading-spinner"></div>
           <p class="state-text">Memuat jadwal...</p>
         </div>
