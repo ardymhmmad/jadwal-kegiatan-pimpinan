@@ -70,17 +70,17 @@ export const useAgendaStore = defineStore('agenda', () => {
   async function fetchAll(filters = {}) {
     loading.value = true
     error.value = null
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 15000)
     try {
       let query = supabase
         .from('agenda')
         .select('id,tanggal,waktu,kegiatan,tempat,keterangan,prioritas,created_at,updated_at')
         .order('tanggal', { ascending: true })
         .order('waktu',   { ascending: true })
-        .lt('created_at', new Date(Date.now() + 86400000).toISOString()) // bypass cache
+        .abortSignal(controller.signal)
 
-      if (filters.tanggal) {
-        query = query.eq('tanggal', filters.tanggal)
-      }
+      if (filters.tanggal) query = query.eq('tanggal', filters.tanggal)
       if (filters.search) {
         query = query.or(
           `kegiatan.ilike.%${filters.search}%,tempat.ilike.%${filters.search}%,keterangan.ilike.%${filters.search}%`
@@ -91,8 +91,9 @@ export const useAgendaStore = defineStore('agenda', () => {
       if (err) throw err
       agendaList.value = data || []
     } catch (e) {
-      error.value = e.message
+      if (e.name !== 'AbortError') error.value = e.message
     } finally {
+      clearTimeout(timer)
       loading.value = false
     }
   }
@@ -100,8 +101,9 @@ export const useAgendaStore = defineStore('agenda', () => {
   async function fetchFromToday() {
     loading.value = true
     error.value = null
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 15000)
     try {
-      // Buat query baru setiap kali dipanggil — hindari reuse connection
       const today = new Date().toISOString().split('T')[0]
       const { data, error: err } = await supabase
         .from('agenda')
@@ -111,37 +113,60 @@ export const useAgendaStore = defineStore('agenda', () => {
         .order('prioritas', { ascending: false })
         .order('waktu',     { ascending: true })
         .limit(50)
+        .abortSignal(controller.signal)
       if (err) throw err
       agendaList.value = data || []
     } catch (e) {
-      error.value = e.message
+      if (e.name !== 'AbortError') error.value = e.message
       console.error('fetchFromToday error:', e.message)
     } finally {
+      clearTimeout(timer)
       loading.value = false
     }
   }
 
   async function create(payload) {
-    const { error: err } = await supabase
-      .from('agenda')
-      .insert([payload])
-    if (err) throw err
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 15000)
+    try {
+      const { error: err } = await supabase
+        .from('agenda')
+        .insert([payload])
+        .abortSignal(controller.signal)
+      if (err) throw err
+    } finally {
+      clearTimeout(timer)
+    }
   }
 
   async function update(id, payload) {
-    const { error: err } = await supabase
-      .from('agenda')
-      .update(payload)
-      .eq('id', id)
-    if (err) throw err
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 15000)
+    try {
+      const { error: err } = await supabase
+        .from('agenda')
+        .update(payload)
+        .eq('id', id)
+        .abortSignal(controller.signal)
+      if (err) throw err
+    } finally {
+      clearTimeout(timer)
+    }
   }
 
   async function remove(id) {
-    const { error: err } = await supabase
-      .from('agenda')
-      .delete()
-      .eq('id', id)
-    if (err) throw err
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 15000)
+    try {
+      const { error: err } = await supabase
+        .from('agenda')
+        .delete()
+        .eq('id', id)
+        .abortSignal(controller.signal)
+      if (err) throw err
+    } finally {
+      clearTimeout(timer)
+    }
   }
 
   return {
