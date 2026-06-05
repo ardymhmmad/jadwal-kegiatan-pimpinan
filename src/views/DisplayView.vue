@@ -265,36 +265,16 @@ const todayFullLabel = computed(() =>
 )
 
 // ─── Data fetch ─────────────────────────────────────────
-async function fetchWithRetry(fn, retries = 3) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      await fn()
-      return
-    } catch (e) {
-      console.warn(`Percobaan ${i + 1} gagal:`, e.message)
-      if (i < retries - 1) await new Promise(r => setTimeout(r, 3000))
-    }
-  }
-}
-
 async function refreshData() {
   isRefreshing.value = true
   try {
-    const timeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('timeout')), 30000)
-    )
-    await Promise.race([
-      Promise.all([
-        agendaStore.fetchFromToday(),
-        instansiStore.fetch(),
-        rtStore.fetchAll(),
-      ]),
-      timeout
+    await Promise.all([
+      agendaStore.fetchFromToday(),
+      instansiStore.fetch(),
+      rtStore.fetchAll(),
     ])
   } catch (e) {
-    console.warn('Refresh gagal, akan coba lagi:', e.message)
-    // Retry setelah 5 detik jika gagal
-    setTimeout(() => fetchWithRetry(agendaStore.fetchFromToday), 5000)
+    console.warn('Refresh gagal:', e.message)
   } finally {
     isRefreshing.value = false
   }
