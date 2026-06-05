@@ -230,6 +230,15 @@ const tickerDuration = computed(() => {
   return `${secs}s`
 })
 
+// Padding baris menyesuaikan jumlah data agar mengisi layar
+const rowPadding = computed(() => {
+  const count = agendaStore.displayAgenda.length
+  if (count <= 2) return '2rem 1.25rem'
+  if (count <= 4) return '1.5rem 1.25rem'
+  if (count <= 6) return '1.1rem 1.25rem'
+  return '0.75rem 1.25rem'
+})
+
 // ─── Helpers ────────────────────────────────────────────
 function isToday(d) {
   return d === new Date().toISOString().split('T')[0]
@@ -542,7 +551,7 @@ onUnmounted(() => {
 
 /* ── Table ───────────────────────────────────────────── */
 .agenda-table-wrap {
-  overflow: auto;
+  overflow: hidden;
   border-radius: 1rem;
   border: 1px solid rgba(37,99,235,0.2);
   background: rgba(10,20,40,0.6);
@@ -551,6 +560,7 @@ onUnmounted(() => {
 .agenda-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 .agenda-table thead tr {
   background: linear-gradient(90deg, rgba(30,64,175,0.8), rgba(37,99,235,0.6));
@@ -594,7 +604,7 @@ onUnmounted(() => {
 .row-future:hover { background: rgba(37,99,235,0.06); }
 
 .agenda-table td {
-  padding: 1rem 1.25rem;
+  padding: v-bind(rowPadding);
   vertical-align: middle;
   font-size: 0.9rem;
   color: #cbd5e1;
