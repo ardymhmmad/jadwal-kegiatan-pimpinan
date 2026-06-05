@@ -221,6 +221,7 @@ const realtimeConnected = ref(false)
 
 let clockInterval   = null
 let refreshInterval = null
+let reconnectInterval = null
 let realtimeChannel = null
 
 // Durasi animasi ticker — semakin panjang teks semakin lambat
@@ -266,23 +267,43 @@ const todayFullLabel = computed(() =>
 // ─── Data fetch ─────────────────────────────────────────
 async function refreshData() {
   isRefreshing.value = true
-  await Promise.all([
-    agendaStore.fetchFromToday(),
-    instansiStore.fetch(),
-    rtStore.fetchAll(),
-  ])
-  isRefreshing.value = false
+  try {
+    // Timeout 10 detik — jika lebih lama, paksa selesai
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 10000)
+    )
+    await Promise.race([
+      Promise.all([
+        agendaStore.fetchFromToday(),
+        instansiStore.fetch(),
+        rtStore.fetchAll(),
+      ]),
+      timeout
+    ])
+  } catch (e) {
+    console.warn('Refresh gagal, akan coba lagi:', e.message)
+  } finally {
+    isRefreshing.value = false
+  }
 }
 
 // ─── Realtime ───────────────────────────────────────────
 function setupRealtime() {
+  if (realtimeChannel) {
+    supabase.removeChannel(realtimeChannel)
+    realtimeChannel = null
+  }
   realtimeChannel = supabase
-    .channel('display-all')
+    .channel('display-all-' + Date.now())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'agenda' },       () => agendaStore.fetchFromToday())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'running_text' }, () => rtStore.fetchAll())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'instansi' },     () => instansiStore.fetch())
     .subscribe((status) => {
       realtimeConnected.value = status === 'SUBSCRIBED'
+      // Jika gagal subscribe, coba reconnect setelah 5 detik
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        setTimeout(setupRealtime, 5000)
+      }
     })
 }
 
@@ -299,18 +320,29 @@ function toggleFullscreen() {
 
 onMounted(() => {
   updateClock()
-  clockInterval   = setInterval(updateClock, 1000)
+  clockInterval = setInterval(updateClock, 1000)
+  // Auto refresh setiap 5 menit sebagai backup
   refreshInterval = setInterval(refreshData, 300000)
+  // Reconnect realtime setiap 10 menit untuk jaga koneksi tetap segar
+  reconnectInterval = setInterval(setupRealtime, 600000)
   refreshData()
   setupRealtime()
   document.addEventListener('fullscreenchange', () => {
     isFullscreen.value = !!document.fullscreenElement
+  })
+  // Refresh saat tab kembali aktif (misal layar monitor nyala lagi)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      refreshData()
+      setupRealtime()
+    }
   })
 })
 
 onUnmounted(() => {
   clearInterval(clockInterval)
   clearInterval(refreshInterval)
+  clearInterval(reconnectInterval)
   if (realtimeChannel) supabase.removeChannel(realtimeChannel)
 })
 </script>
