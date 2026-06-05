@@ -7,4 +7,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Missing Supabase environment variables. Check your .env file.')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+    timeout: 30000,
+  },
+  global: {
+    fetch: (url, options = {}) => {
+      return fetch(url, { ...options, signal: AbortSignal.timeout(30000) })
+    }
+  }
+})
