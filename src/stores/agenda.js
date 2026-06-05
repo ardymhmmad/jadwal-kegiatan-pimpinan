@@ -122,24 +122,18 @@ export const useAgendaStore = defineStore('agenda', () => {
   }
 
   async function create(payload) {
-    const { data, error: err } = await supabase
+    const { error: err } = await supabase
       .from('agenda')
       .insert([payload])
-      .select()
-      .single()
     if (err) throw err
-    return data
   }
 
   async function update(id, payload) {
-    const { data, error: err } = await supabase
+    const { error: err } = await supabase
       .from('agenda')
       .update(payload)
       .eq('id', id)
-      .select()
-      .single()
     if (err) throw err
-    return data
   }
 
   async function remove(id) {
