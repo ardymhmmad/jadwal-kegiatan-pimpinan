@@ -321,8 +321,8 @@ function toggleFullscreen() {
 onMounted(() => {
   updateClock()
   clockInterval = setInterval(updateClock, 1000)
-  // Auto refresh setiap 5 menit sebagai backup
-  refreshInterval = setInterval(refreshData, 300000)
+  // Auto refresh setiap 30 detik sebagai backup
+  refreshInterval = setInterval(refreshData, 30000)
   // Reconnect realtime setiap 10 menit untuk jaga koneksi tetap segar
   reconnectInterval = setInterval(setupRealtime, 600000)
   refreshData()
