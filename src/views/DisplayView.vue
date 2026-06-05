@@ -294,7 +294,7 @@ function toggleFullscreen() {
 onMounted(() => {
   updateClock()
   clockInterval   = setInterval(updateClock, 1000)
-  refreshInterval = setInterval(refreshData, 30000)
+  refreshInterval = setInterval(refreshData, 300000)
   refreshData()
   setupRealtime()
   document.addEventListener('fullscreenchange', () => {
