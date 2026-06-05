@@ -230,13 +230,10 @@ const tickerDuration = computed(() => {
   return `${secs}s`
 })
 
-// Padding baris menyesuaikan jumlah data agar mengisi layar
-const rowPadding = computed(() => {
-  const count = agendaStore.displayAgenda.length
-  if (count <= 2) return '2rem 1.25rem'
-  if (count <= 4) return '1.5rem 1.25rem'
-  if (count <= 6) return '1.1rem 1.25rem'
-  return '0.75rem 1.25rem'
+// Tinggi baris otomatis mengisi layar berdasarkan jumlah data
+const rowHeight = computed(() => {
+  const count = agendaStore.displayAgenda.length || 1
+  return `calc((100% ) / ${count})`
 })
 
 // ─── Helpers ────────────────────────────────────────────
@@ -323,7 +320,7 @@ onUnmounted(() => {
 .display-root {
   position: relative;
   width: 100vw;
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   align-items: stretch;
   background: #050d1a;
@@ -368,6 +365,7 @@ onUnmounted(() => {
   position: relative;
   z-index: 1;
   width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   padding: 2rem 2.5rem 4rem;
@@ -523,6 +521,8 @@ onUnmounted(() => {
 .display-content {
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 .state-center {
   display: flex;
@@ -531,6 +531,7 @@ onUnmounted(() => {
   justify-content: center;
   padding: 4rem;
   gap: 1rem;
+  flex: 1;
 }
 .loading-spinner {
   width: 3rem;
@@ -556,11 +557,21 @@ onUnmounted(() => {
   border: 1px solid rgba(37,99,235,0.2);
   background: rgba(10,20,40,0.6);
   backdrop-filter: blur(8px);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 .agenda-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+  height: 100%;
+}
+.agenda-table tbody {
+  height: 100%;
+}
+.agenda-table tbody tr {
+  height: v-bind(rowHeight);
 }
 .agenda-table thead tr {
   background: linear-gradient(90deg, rgba(30,64,175,0.8), rgba(37,99,235,0.6));
@@ -604,7 +615,7 @@ onUnmounted(() => {
 .row-future:hover { background: rgba(37,99,235,0.06); }
 
 .agenda-table td {
-  padding: v-bind(rowPadding);
+  padding: 0.5rem 1.25rem;
   vertical-align: middle;
   font-size: 0.9rem;
   color: #cbd5e1;
