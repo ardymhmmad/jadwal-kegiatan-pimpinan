@@ -9,14 +9,20 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   realtime: {
-    params: {
-      eventsPerSecond: 10,
-    },
+    params: { eventsPerSecond: 10 },
     timeout: 30000,
   },
   global: {
     fetch: (url, options = {}) => {
-      return fetch(url, { ...options, signal: AbortSignal.timeout(30000) })
+      return fetch(url, {
+        ...options,
+        cache: 'no-store',
+        headers: {
+          ...options.headers,
+          'Cache-Control': 'no-cache',
+        },
+        signal: AbortSignal.timeout(30000),
+      })
     }
   }
 })
