@@ -100,17 +100,21 @@ export const useAgendaStore = defineStore('agenda', () => {
     loading.value = true
     error.value = null
     try {
+      // Buat query baru setiap kali dipanggil — hindari reuse connection
+      const today = new Date().toISOString().split('T')[0]
       const { data, error: err } = await supabase
         .from('agenda')
-        .select('*')
-        .gte('tanggal', todayStr())
+        .select('id,tanggal,waktu,kegiatan,tempat,keterangan,prioritas')
+        .gte('tanggal', today)
         .order('tanggal',   { ascending: true })
         .order('prioritas', { ascending: false })
         .order('waktu',     { ascending: true })
+        .limit(50)
       if (err) throw err
       agendaList.value = data || []
     } catch (e) {
       error.value = e.message
+      console.error('fetchFromToday error:', e.message)
     } finally {
       loading.value = false
     }
