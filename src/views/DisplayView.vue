@@ -124,7 +124,8 @@
                 </td>
                 <td class="col-waktu">
                   <div class="waktu-box">
-                    <span class="waktu-text">{{ item.waktu.slice(0,5) }}</span>
+                    <span v-if="item.waktu" class="waktu-text">{{ item.waktu.slice(0,5) }}</span>
+                    <span v-else class="tentatif-text">Tentatif</span>
                     <span v-if="item.prioritas" class="priority-star">★</span>
                   </div>
                 </td>
@@ -707,6 +708,17 @@ onUnmounted(() => {
   font-weight: 600;
   color: #38bdf8;
   letter-spacing: 0.05em;
+}
+.tentatif-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  background: rgba(100,116,139,0.15);
+  border: 1px solid rgba(100,116,139,0.25);
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 .priority-star {
   color: #f59e0b;
