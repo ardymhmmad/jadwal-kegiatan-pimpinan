@@ -238,8 +238,15 @@ const rowHeight = computed(() => {
 })
 
 // ─── Helpers ────────────────────────────────────────────
+function nowWITA() {
+  const now = new Date()
+  return new Date(now.getTime() + (8 * 60 * 60 * 1000))
+}
+function todayWITA() {
+  return nowWITA().toISOString().split('T')[0]
+}
 function isToday(d) {
-  return d === new Date().toISOString().split('T')[0]
+  return d === todayWITA()
 }
 
 // ─── Formatters ─────────────────────────────────────────
@@ -252,16 +259,26 @@ function formatTanggalDisplay(d) {
   })
 }
 
-// ─── Clock ──────────────────────────────────────────────
+// ─── Clock (WITA) ────────────────────────────────────────
 function updateClock() {
-  const now = new Date()
-  currentTime.value      = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-  currentDateShort.value = now.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })
-  lastUpdated.value      = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  const wita = nowWITA()
+  const hh = String(wita.getUTCHours()).padStart(2, '0')
+  const mm = String(wita.getUTCMinutes()).padStart(2, '0')
+  const ss = String(wita.getUTCSeconds()).padStart(2, '0')
+  currentTime.value = `${hh}.${mm}.${ss}`
+
+  currentDateShort.value = wita.toLocaleDateString('id-ID', {
+    timeZone: 'Asia/Makassar',
+    weekday: 'short', day: 'numeric', month: 'short'
+  })
+  lastUpdated.value = `${hh}:${mm}:${ss}`
 }
 
 const todayFullLabel = computed(() =>
-  new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  nowWITA().toLocaleDateString('id-ID', {
+    timeZone: 'Asia/Makassar',
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  })
 )
 
 // ─── Data fetch ─────────────────────────────────────────
