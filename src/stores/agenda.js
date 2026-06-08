@@ -7,26 +7,34 @@ export const useAgendaStore = defineStore('agenda', () => {
   const loading = ref(false)
   const error = ref(null)
 
-  // ─── Helpers ───────────────────────────────────────────────
+  // ─── Helpers (WITA UTC+8) ──────────────────────────────────
+  function nowWITA() {
+    // Ambil waktu sekarang dalam zona WITA (UTC+8)
+    const now = new Date()
+    const wita = new Date(now.getTime() + (8 * 60 * 60 * 1000))
+    return wita
+  }
   function todayStr() {
-    return new Date().toISOString().split('T')[0]
+    return nowWITA().toISOString().split('T')[0]
   }
   function weekRange() {
-    const now = new Date()
-    const day = now.getDay()
+    const now = nowWITA()
+    const day = now.getUTCDay()
     const mon = new Date(now)
-    mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1))
+    mon.setUTCDate(now.getUTCDate() - (day === 0 ? 6 : day - 1))
     const sun = new Date(mon)
-    sun.setDate(mon.getDate() + 6)
+    sun.setUTCDate(mon.getUTCDate() + 6)
     return {
       start: mon.toISOString().split('T')[0],
       end:   sun.toISOString().split('T')[0],
     }
   }
   function monthRange() {
-    const now = new Date()
-    const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
-    const end   = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
+    const now = nowWITA()
+    const year  = now.getUTCFullYear()
+    const month = now.getUTCMonth()
+    const start = new Date(Date.UTC(year, month, 1)).toISOString().split('T')[0]
+    const end   = new Date(Date.UTC(year, month + 1, 0)).toISOString().split('T')[0]
     return { start, end }
   }
 
@@ -98,7 +106,7 @@ export const useAgendaStore = defineStore('agenda', () => {
     loading.value = true
     error.value = null
     try {
-      const today = new Date().toISOString().split('T')[0]
+      const today = todayStr() // sudah pakai WITA
       const { data, error: err } = await supabase
         .from('agenda')
         .select('id,tanggal,waktu,kegiatan,tempat,keterangan,prioritas')
