@@ -86,7 +86,8 @@
                   </div>
                 </td>
                 <td class="px-5 py-4 whitespace-nowrap font-mono text-primary-700 font-medium">
-                  {{ item.waktu.slice(0,5) }}
+                  <span v-if="item.waktu">{{ item.waktu.slice(0,5) }}</span>
+                  <span v-else class="inline-block px-2 py-0.5 bg-slate-100 text-slate-500 text-xs rounded font-sans font-medium">Tentatif</span>
                 </td>
                 <td class="px-5 py-4">
                   <p class="font-medium text-slate-800">{{ item.kegiatan }}</p>
@@ -150,8 +151,10 @@
                 <input v-model="form.tanggal" type="date" required class="input-field" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1.5">Waktu <span class="text-red-500">*</span></label>
-                <input v-model="form.waktu" type="time" required class="input-field" />
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Waktu
+                  <span class="text-slate-400 font-normal text-xs">(kosongkan jika tentatif)</span>
+                </label>
+                <input v-model="form.waktu" type="time" class="input-field" />
               </div>
             </div>
 
@@ -310,7 +313,7 @@ async function handleSubmit() {
   try {
     const payload = {
       tanggal: form.value.tanggal,
-      waktu: form.value.waktu,
+      waktu: form.value.waktu || null,
       kegiatan: form.value.kegiatan,
       tempat: form.value.tempat,
       keterangan: form.value.keterangan || null,
