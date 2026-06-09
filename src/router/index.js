@@ -45,6 +45,19 @@ const routes = [
     component: () => import('@/views/admin/InstansiView.vue'),
     meta: { requiresAuth: true, requiresSuperadmin: true }
   },
+  {
+    path: '/admin/audit-trail',
+    name: 'AdminAuditTrail',
+    component: () => import('@/views/admin/AuditTrailView.vue'),
+    meta: { requiresAuth: true, requiresSuperadmin: true }
+  },
+  // ── Semua yang login ──────────────────────────────────────
+  {
+    path: '/admin/rekap',
+    name: 'AdminRekap',
+    component: () => import('@/views/admin/RekapView.vue'),
+    meta: { requiresAuth: true }
+  },
   { path: '/:pathMatch(.*)*', redirect: '/display' }
 ]
 
