@@ -244,10 +244,12 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import AdminLayout from '@/components/AdminLayout.vue'
-import { useAgendaStore } from '@/stores/agenda'
+import AdminLayout        from '@/components/AdminLayout.vue'
+import { useAgendaStore }     from '@/stores/agenda'
+import { useAuditTrailStore } from '@/stores/auditTrail'
 
 const agendaStore = useAgendaStore()
+const auditStore  = useAuditTrailStore()
 
 const filters = ref({ search: '', tanggal: '' })
 const showModal = ref(false)
@@ -312,17 +314,30 @@ async function handleSubmit() {
   formError.value = ''
   try {
     const payload = {
-      tanggal: form.value.tanggal,
-      waktu: form.value.waktu || null,
-      kegiatan: form.value.kegiatan,
-      tempat: form.value.tempat,
+      tanggal:   form.value.tanggal,
+      waktu:     form.value.waktu || null,
+      kegiatan:  form.value.kegiatan,
+      tempat:    form.value.tempat,
       keterangan: form.value.keterangan || null,
       prioritas: form.value.prioritas,
     }
     if (isEditing.value) {
+      const dataLama = agendaStore.agendaList.find(a => a.id === form.value.id)
       await agendaStore.update(form.value.id, payload)
+      await auditStore.log({
+        aksi: 'edit',
+        dataId: form.value.id,
+        dataLama,
+        dataBaru: payload,
+        keterangan: `Edit agenda: ${payload.kegiatan}`,
+      })
     } else {
       await agendaStore.create(payload)
+      await auditStore.log({
+        aksi: 'tambah',
+        dataBaru: payload,
+        keterangan: `Tambah agenda: ${payload.kegiatan}`,
+      })
     }
     closeModal()
     await new Promise(r => setTimeout(r, 500))
@@ -342,7 +357,14 @@ function confirmDelete(item) {
 async function handleDelete() {
   isDeleting.value = true
   try {
+    const dataLama = { ...deleteTarget.value }
     await agendaStore.remove(deleteTarget.value.id)
+    await auditStore.log({
+      aksi: 'hapus',
+      dataId: deleteTarget.value.id,
+      dataLama,
+      keterangan: `Hapus agenda: ${deleteTarget.value.kegiatan}`,
+    })
     showDeleteModal.value = false
     await new Promise(r => setTimeout(r, 500))
     fetchData()
