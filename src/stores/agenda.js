@@ -89,10 +89,16 @@ export const useAgendaStore = defineStore('agenda', () => {
     try {
       let query = supabase
         .from('agenda')
-        .select('id,tanggal,waktu,kegiatan,tempat,keterangan,prioritas,created_at,updated_at')
+        .select('id,tanggal,tanggal_akhir,waktu,kegiatan,tempat,keterangan,prioritas,created_at,updated_at')
         .order('tanggal', { ascending: true })
         .order('waktu',   { ascending: true })
 
+      // Filter akan datang — sembunyikan yang sudah lewat (tanggal_akhir atau tanggal < hari ini)
+      if (filters.akanDatang) {
+        const today = todayStr()
+        // Tampilkan jika tanggal_akhir >= today ATAU (tanggal_akhir null dan tanggal >= today)
+        query = query.or(`tanggal_akhir.gte.${today},and(tanggal_akhir.is.null,tanggal.gte.${today})`)
+      }
       if (filters.tanggal) query = query.eq('tanggal', filters.tanggal)
       if (filters.search) {
         query = query.or(
@@ -114,14 +120,23 @@ export const useAgendaStore = defineStore('agenda', () => {
     loading.value = true
     error.value = null
     try {
-      const today = todayStr() // sudah pakai WITA
+      const today = todayStr()
       const { data, error: err } = await supabase
         .from('agenda')
-        .select('id,tanggal,waktu,kegiatan,tempat,keterangan,prioritas')
-        .gte('tanggal', today)
+        .select('id,tanggal,tanggal_akhir,waktu,kegiatan,tempat,keterangan,prioritas')
+        .or(`tanggal_akhir.gte.${today},and(tanggal_akhir.is.null,tanggal.gte.${today})`)
         .order('tanggal',   { ascending: true })
         .order('prioritas', { ascending: false })
         .order('waktu',     { ascending: true })
+        .limit(50)
+      if (err) throw err
+      agendaList.value = data || []
+    } catch (e) {
+      error.value = e.message
+    } finally {
+      loading.value = false
+    }
+  }
         .limit(50)
       if (err) throw err
       agendaList.value = data || []
