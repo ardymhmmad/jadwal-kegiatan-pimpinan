@@ -17,7 +17,7 @@
 
       <!-- Filters -->
       <div class="card mb-6">
-        <div class="flex flex-wrap gap-3">
+        <div class="flex flex-wrap gap-3 items-center">
           <div class="flex-1 min-w-48 relative">
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,10 +28,22 @@
               placeholder="Cari kegiatan, tempat..."
               class="input-field pl-9" />
           </div>
-          <input v-model="filters.tanggal" @change="fetchData" type="date"
-            class="input-field w-auto" />
-          <button v-if="filters.search || filters.tanggal" @click="clearFilters"
-            class="btn-secondary">
+          <input v-model="filters.tanggal" @change="fetchData" type="date" class="input-field w-auto" />
+
+          <!-- Toggle Akan Datang -->
+          <button @click="toggleAkanDatang"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all"
+            :class="filters.akanDatang
+              ? 'bg-primary-700 text-white border-primary-700'
+              : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            {{ filters.akanDatang ? 'Akan Datang' : 'Semua Agenda' }}
+          </button>
+
+          <button v-if="filters.search || filters.tanggal" @click="clearFilters" class="btn-secondary">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
@@ -74,13 +86,18 @@
                 </td>
               </tr>
               <tr v-else v-for="item in agendaStore.agendaList" :key="item.id"
-                class="hover:bg-slate-50/80 transition-colors">
+                class="hover:bg-slate-50/80 transition-colors"
+                :class="isPast(item) ? 'opacity-50' : ''">
                 <td class="px-5 py-4 whitespace-nowrap">
                   <div class="flex flex-col gap-0.5">
                     <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">{{ formatHari(item.tanggal) }}</span>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
                       <span class="font-medium text-slate-700">{{ formatTanggal(item.tanggal) }}</span>
-                      <span v-if="isToday(item.tanggal)"
+                      <template v-if="item.tanggal_akhir && item.tanggal_akhir !== item.tanggal">
+                        <span class="text-slate-400 text-xs">s.d.</span>
+                        <span class="font-medium text-slate-700">{{ formatTanggal(item.tanggal_akhir) }}</span>
+                      </template>
+                      <span v-if="isToday(item.tanggal) || isToday(item.tanggal_akhir)"
                         class="inline-block px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded font-medium">Hari ini</span>
                     </div>
                   </div>
@@ -147,15 +164,21 @@
           <form @submit.prevent="handleSubmit" class="px-6 py-5 space-y-4">
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1.5">Tanggal <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Tanggal Mulai <span class="text-red-500">*</span></label>
                 <input v-model="form.tanggal" type="date" required class="input-field" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1.5">Waktu
-                  <span class="text-slate-400 font-normal text-xs">(kosongkan jika tentatif)</span>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Tanggal Selesai
+                  <span class="text-slate-400 font-normal text-xs">(opsional, jika multi-hari)</span>
                 </label>
-                <input v-model="form.waktu" type="time" class="input-field" />
+                <input v-model="form.tanggal_akhir" type="date" :min="form.tanggal" class="input-field" />
               </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">Waktu
+                <span class="text-slate-400 font-normal text-xs">(kosongkan jika tentatif)</span>
+              </label>
+              <input v-model="form.waktu" type="time" class="input-field" />
             </div>
 
             <div>
@@ -251,44 +274,61 @@ import { useAuditTrailStore } from '@/stores/auditTrail'
 const agendaStore = useAgendaStore()
 const auditStore  = useAuditTrailStore()
 
-const filters = ref({ search: '', tanggal: '' })
+const filters = ref({ search: '', tanggal: '', akanDatang: true })
 const showModal = ref(false)
 const showDeleteModal = ref(false)
-const isEditing = ref(false)
-const isSaving = ref(false)
+const isEditing  = ref(false)
+const isSaving   = ref(false)
 const isDeleting = ref(false)
-const formError = ref('')
+const formError  = ref('')
 const deleteTarget = ref(null)
 let searchTimeout = null
 
 const defaultForm = () => ({
-  id: null, tanggal: '', waktu: '', kegiatan: '', tempat: '', keterangan: '', prioritas: false
+  id: null, tanggal: '', tanggal_akhir: '', waktu: '',
+  kegiatan: '', tempat: '', keterangan: '', prioritas: false
 })
 const form = ref(defaultForm())
 
+function todayWITA() {
+  const now = new Date()
+  return new Date(now.getTime() + 8 * 60 * 60 * 1000).toISOString().split('T')[0]
+}
 function formatHari(d) {
   return new Date(d + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long' })
 }
 function formatTanggal(d) {
+  if (!d) return ''
   return new Date(d + 'T00:00:00').toLocaleDateString('id-ID', {
     weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
   })
 }
 function isToday(d) {
-  return d === new Date().toISOString().split('T')[0]
+  if (!d) return false
+  return d === todayWITA()
+}
+function isPast(item) {
+  const endDate = item.tanggal_akhir || item.tanggal
+  return endDate < todayWITA()
 }
 
 function fetchData() {
-  agendaStore.fetchAll({ search: filters.value.search, tanggal: filters.value.tanggal })
+  agendaStore.fetchAll({
+    search:     filters.value.search,
+    tanggal:    filters.value.tanggal,
+    akanDatang: filters.value.akanDatang,
+  })
 }
-
 function debouncedFetch() {
   clearTimeout(searchTimeout)
   searchTimeout = setTimeout(fetchData, 400)
 }
-
+function toggleAkanDatang() {
+  filters.value.akanDatang = !filters.value.akanDatang
+  fetchData()
+}
 function clearFilters() {
-  filters.value = { search: '', tanggal: '' }
+  filters.value = { search: '', tanggal: '', akanDatang: true }
   fetchData()
 }
 
@@ -296,14 +336,13 @@ function openModal(item = null) {
   formError.value = ''
   if (item) {
     isEditing.value = true
-    form.value = { ...item }
+    form.value = { ...item, tanggal_akhir: item.tanggal_akhir || '' }
   } else {
     isEditing.value = false
     form.value = defaultForm()
   }
   showModal.value = true
 }
-
 function closeModal() {
   showModal.value = false
   form.value = defaultForm()
@@ -314,30 +353,21 @@ async function handleSubmit() {
   formError.value = ''
   try {
     const payload = {
-      tanggal:   form.value.tanggal,
-      waktu:     form.value.waktu || null,
-      kegiatan:  form.value.kegiatan,
-      tempat:    form.value.tempat,
-      keterangan: form.value.keterangan || null,
-      prioritas: form.value.prioritas,
+      tanggal:       form.value.tanggal,
+      tanggal_akhir: form.value.tanggal_akhir || null,
+      waktu:         form.value.waktu || null,
+      kegiatan:      form.value.kegiatan,
+      tempat:        form.value.tempat,
+      keterangan:    form.value.keterangan || null,
+      prioritas:     form.value.prioritas,
     }
     if (isEditing.value) {
       const dataLama = agendaStore.agendaList.find(a => a.id === form.value.id)
       await agendaStore.update(form.value.id, payload)
-      await auditStore.log({
-        aksi: 'edit',
-        dataId: form.value.id,
-        dataLama,
-        dataBaru: payload,
-        keterangan: `Edit agenda: ${payload.kegiatan}`,
-      })
+      await auditStore.log({ aksi: 'edit', dataId: form.value.id, dataLama, dataBaru: payload, keterangan: `Edit agenda: ${payload.kegiatan}` })
     } else {
       await agendaStore.create(payload)
-      await auditStore.log({
-        aksi: 'tambah',
-        dataBaru: payload,
-        keterangan: `Tambah agenda: ${payload.kegiatan}`,
-      })
+      await auditStore.log({ aksi: 'tambah', dataBaru: payload, keterangan: `Tambah agenda: ${payload.kegiatan}` })
     }
     closeModal()
     await new Promise(r => setTimeout(r, 500))
@@ -349,30 +379,19 @@ async function handleSubmit() {
   }
 }
 
-function confirmDelete(item) {
-  deleteTarget.value = item
-  showDeleteModal.value = true
-}
+function confirmDelete(item) { deleteTarget.value = item; showDeleteModal.value = true }
 
 async function handleDelete() {
   isDeleting.value = true
   try {
     const dataLama = { ...deleteTarget.value }
     await agendaStore.remove(deleteTarget.value.id)
-    await auditStore.log({
-      aksi: 'hapus',
-      dataId: deleteTarget.value.id,
-      dataLama,
-      keterangan: `Hapus agenda: ${deleteTarget.value.kegiatan}`,
-    })
+    await auditStore.log({ aksi: 'hapus', dataId: deleteTarget.value.id, dataLama, keterangan: `Hapus agenda: ${deleteTarget.value.kegiatan}` })
     showDeleteModal.value = false
     await new Promise(r => setTimeout(r, 500))
     fetchData()
-  } catch (e) {
-    console.error(e)
-  } finally {
-    isDeleting.value = false
-  }
+  } catch (e) { console.error(e) }
+  finally { isDeleting.value = false }
 }
 
 onMounted(fetchData)
