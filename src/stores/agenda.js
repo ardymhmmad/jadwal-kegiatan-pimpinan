@@ -137,15 +137,6 @@ export const useAgendaStore = defineStore('agenda', () => {
       loading.value = false
     }
   }
-        .limit(50)
-      if (err) throw err
-      agendaList.value = data || []
-    } catch (e) {
-      error.value = e.message
-    } finally {
-      loading.value = false
-    }
-  }
 
   async function create(payload) {
     const { error: err } = await supabase.from('agenda').insert([payload])
