@@ -114,12 +114,21 @@
                   <div class="tanggal-wrap">
                     <div class="flex items-center gap-2">
                       <span class="tanggal-hari">{{ formatHari(item.tanggal) }}</span>
-                      <span v-if="isToday(item.tanggal)"
+                      <span v-if="isToday(item.tanggal) || (item.tanggal_akhir && isToday(item.tanggal_akhir))"
                         class="inline-block px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs rounded font-semibold border border-emerald-500/30">
                         Hari Ini
                       </span>
                     </div>
-                    <span class="tanggal-tgl">{{ formatTanggalDisplay(item.tanggal) }}</span>
+                    <!-- Tanggal tunggal -->
+                    <template v-if="!item.tanggal_akhir || item.tanggal_akhir === item.tanggal">
+                      <span class="tanggal-tgl">{{ formatTanggalDisplay(item.tanggal) }}</span>
+                    </template>
+                    <!-- Rentang tanggal multi-hari -->
+                    <template v-else>
+                      <span class="tanggal-tgl">{{ formatTanggalDisplay(item.tanggal) }}</span>
+                      <span class="tanggal-sd">s.d.</span>
+                      <span class="tanggal-tgl">{{ formatTanggalDisplay(item.tanggal_akhir) }}</span>
+                    </template>
                   </div>
                 </td>
                 <td class="col-waktu">
@@ -630,10 +639,10 @@ onUnmounted(() => {
   border-bottom: 1px solid rgba(37,99,235,0.3);
 }
 .col-no        { width: 3.5rem;  text-align: center; }
-.col-tanggal   { width: 11rem; }
+.col-tanggal   { width: 14rem; }
 .col-waktu     { width: 7rem; }
-.col-kegiatan  { min-width: 18rem; }
-.col-tempat    { width: 13rem; }
+.col-kegiatan  { min-width: 16rem; }
+.col-tempat    { width: 12rem; }
 .col-keterangan { width: auto; }
 
 /* Rows */
@@ -682,7 +691,7 @@ onUnmounted(() => {
 .tanggal-wrap {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.1rem;
 }
 .tanggal-hari {
   font-size: 0.7rem;
@@ -692,9 +701,17 @@ onUnmounted(() => {
   color: #64748b;
 }
 .tanggal-tgl {
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: #cbd5e1;
+  line-height: 1.3;
+}
+.tanggal-sd {
+  font-size: 0.6rem;
+  color: #475569;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .waktu-box {
