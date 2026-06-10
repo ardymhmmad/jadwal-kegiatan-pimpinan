@@ -76,7 +76,7 @@
           <div v-for="item in agendaStore.todayAgenda" :key="item.id"
             class="flex items-start gap-4 py-3 first:pt-0 last:pb-0">
             <div class="w-16 text-xs font-mono font-semibold text-primary-700 shrink-0 pt-0.5">
-              {{ item.waktu.slice(0,5) }}
+              {{ item.waktu ? item.waktu.slice(0,5) : 'Tent.' }}
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
